@@ -1,0 +1,351 @@
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>Israel Coronavirus Data Visualisation</title>
+    <style scoped>
+        html{
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .doc_p{
+        font-size: 15px;
+        text-align: left;
+
+        }
+         img{
+        max-width:100%;
+
+        }
+        #date_filters{
+        display = inline;
+        }
+        body{
+        width: 100%;
+        text-align: center;
+        }
+        #navbar nav{
+        display:inline-block;
+        padding: 10px;
+        border : solid;
+        border-radius : 25px;
+        }
+        #navbar nav:hover{
+        color:white;
+        background-color:grey;
+        }
+        #docs{
+        text-align: left;
+        display:none;
+        width : 60%;
+        margin-left: 20%;
+        margin-right: 20%;
+        }
+        #cumulative{
+        display:none;
+        }
+        p{
+        width: 100%;
+        font-size: 35px;
+        text-align: center;
+        }
+        #loading{
+        display: none;
+        }
+        #loadcont{
+        width:100%;
+        text-align:center;
+        }
+        @media screen and (max-width: 450px) {
+        #date_filters{
+        display = block;
+        }
+        html {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            }
+        body {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            text-align: center;
+            }
+            html, body {
+                position: relative;
+                margin: 0;
+                border: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow-x: hidden;
+                }
+            body {
+            overflow: auto;
+                }
+        p {
+            width: 100%;
+        font-size: 20px;
+        text-align: center;
+        }
+        div{
+        max-width: 100%;
+        text-align: center;
+        overflow:hide;
+        }
+
+        #tvp1{
+        content:url("{{STATIC_PREFIX}}{{filename_tvp_mob}}");
+        }
+         #tvp2{
+        content:url("{{STATIC_PREFIX}}{{perc_filename_tvp_mob}}");
+        }
+         #cnf1{
+        content:url("{{STATIC_PREFIX}}{{filename_cnf_mob}}");
+        }
+         #cnf2{
+        content:url("{{STATIC_PREFIX}}{{change_filename_cnf_mob}}");
+        }
+         #sym1{
+        content:url("{{STATIC_PREFIX}}{{filename_sym_mob}}");
+        }
+         #sym2{
+        content:url("{{STATIC_PREFIX}}{{pos_filename_sym_mob}}");
+        }
+         #hospi1{
+        content:url("{{STATIC_PREFIX}}{{filename_hospi_mob}}");
+        }
+         #hospi2{
+        content:url("{{STATIC_PREFIX}}{{perc_hosp_filename_hospi_mob}}");
+        }
+         #hospi3{
+        content:url("{{STATIC_PREFIX}}{{perc_case_filename_hospi_mob}}");
+        }
+         #hospi4{
+        content:url("{{STATIC_PREFIX}}{{perc_severe_death_filename_hospi_mob}}");
+        }
+        #dbar1{
+        content:url("{{STATIC_PREFIX }}{{filename_dbar_mob}}");
+        }
+        #dbar2{
+        content:url("{{STATIC_PREFIX }}{{perc_filename_dbar_mob}}");
+        }
+        #dbar3{
+        content:url("{{STATIC_PREFIX }}{{perc_vent_filename_dbar_mob}}");
+        }
+
+        }
+
+    </style>
+</head>
+<body>
+<h3>
+    Israel Coronavirus data visualisation.
+</h3><br><br>
+<div id = "navbar">
+    <nav id = "date_filt_nav" onclick="togglePage()">Date Filtered Graphs</nav>
+    <nav id = "cumu_nav" onclick="togglePage()">Cumulative Graphs</nav>
+    <nav id = "doc_nav" onclick="togglePage()">Documentation</nav>
+    <br></div>
+<div id ="pages">
+
+
+<div id = "cumulative">
+    <br>
+    <p> Deaths By Age Group</p>
+    <img id= "dbar1" src= {{STATIC_PREFIX }}{{filename_dbar_pc}}><br><br>
+    <p> Deaths % By Age Group</p>
+    <img id= "dbar2"  src= {{STATIC_PREFIX }}{{perc_filename_dbar_pc}}><br><br>
+    <p>  % Vantilated Out Of Total Deaths By Age Group</p>
+    <img id= "dbar3"  src= {{STATIC_PREFIX }}{{perc_vent_filename_dbar_pc}}><br><br>
+</div>
+<div id = "date_filtered">
+<h4>Date Filters:</h4><br>
+
+<form id = "date_filters" action = "{% url 'index' %}" method = "POST">
+    {% csrf_token %}
+    <div class = "dholder">
+        <label for="fdate">From Date</label>
+    <input type="date" id="fdate" name="fdate" value = {{fdate}}>
+    </div>
+    <div class = "dholder">
+    <label for="todate">To Date</label>
+    <input type="date" id="todate" name="todate" value ={{todate}}>
+    </div>
+    <button type="submit" onclick="loadingAnimation()">Filter</button><br><br>
+    <div id = "loadcont">
+    <img id="loading" src="{{STATIC_PREFIX }}loading.gif">
+        </div>
+    
+</form>
+
+<div id = "graphs_date_filt">
+    <p>Daily Tests & Daily Positives By Date </p>
+    <img id = "tvp1" src= {{STATIC_PREFIX}}{{filename_tvp_pc}}><br><br><br>
+    <p>Daily Tests & Daily Positives % By Date </p>
+    <img id = "tvp2" src= {{STATIC_PREFIX}}{{perc_filename_tvp_pc}}>
+    <p>Daily Confirmed ,Recovered , Active & CFR </p>
+    <img id = "cnf1" src= {{STATIC_PREFIX}}{{filename_cnf_pc}}><br><br><br>
+    <p>Daily Change Confirmed ,Recovered , Active </p>
+    <img id = "cnf2" src= {{STATIC_PREFIX}}{{change_filename_cnf_pc}}>
+    <p>Daily Tested with Symptoms Vs All Tests </p>
+    <img id = "sym1" src= {{STATIC_PREFIX}}{{filename_sym_pc}}><br><br><br>
+    <p>Daily Tested Positive with Symptoms Vs All Positive Tests </p>
+    <img id = "sym2" src= {{STATIC_PREFIX}}{{pos_filename_sym_pc}}><br><br><br>
+    <p>Daily Hospitalized By Severity</p>
+    <img id = "hospi1" src= {{STATIC_PREFIX}}{{filename_hospi_pc}}><br><br><br>
+    <p>Daily  % Out Of Total daily Hospitalizations By Severity  </p>
+    <img id = "hospi2"  src= {{STATIC_PREFIX}}{{perc_hosp_filename_hospi_pc}}><br><br><br>
+    <p>Daily Hospitalized % Of Cumulative Cases By Severity  </p>
+    <img id = "hospi3" src= {{STATIC_PREFIX}}{{perc_case_filename_hospi_pc}}><br><br><br>
+    <p>Daily Death Rate Out Of Severe Hospitalizations  </p>
+    <img id = "hospi4" src= {{STATIC_PREFIX}}{{perc_severe_death_filename_hospi_pc}}><br><br><br>
+
+    
+</div>
+</div>
+    <div id = "docs">
+        <br>
+    <p class = "doc_p">
+        This web app visualises Israel's Covid-19 Data in various ways.
+        the data is taken from two main sources , the Israeli Ministry Of Health and Covid19Api.com.
+        this document will walk you through the data sources and visualisations,
+        nd explain how the data is processed and what the graphs present.
+    </p>
+        <p class = "doc_p">
+        There may be small discrepancies between data shown here and the official Ministry Of Health publications for a couple of reasons
+           <ul>
+        <li> The Israel Ministry Of Health states in the the documentation of the publicly available data that it takes no responsibility
+            for the accuracy of the data, and that only the official data published on the dashboards of the Ministry Of Health is the accurate and updated data.
+            </li>
+        <li>
+            The Israel Ministry Of Health api data is updated in different intervals than the official dashboard (official dashboard is updated 3 times  a day and publicly, available api data is updated twice a week)
+        </li>
+        <li>
+            The deaths and recoveries data publicly available from the Israel Ministry Of Health lacks date data so in order to do a daily analysis
+            the covid19api had to be added and although its based on official updates there may be small discrepancies
+        </li><br><br>
+
+        All that said , it is still possible to see trends in the graphs presented here.
+        Most graphs can be filtered by date and are in the 'Date Filtered Graphs' section.
+        Graphs that are not date filtered are in the 'Cumulative Graphs' section.
+        This app will refresh its data hourly to make sure the data is as current as possible.
+    </ul>
+    </p>
+
+        <h2>All Tests No Symptoms</h2>
+        <a href = "https://data.gov.il/dataset/covid-19/resource/dcf999c1-d394-4b57-a5e0-9d014a62e046">To Source</a><br><br>
+        <p class = "doc_p">
+            This is the biggest dataset analyzed here , it includes all PCR tests taken in Israel since 2020-03-11.
+            It contains limited information - test date , result , and two indicators to the nature of the test
+            ( is it the patient's first test? is it a test to detect the virus , confirm recovery or a survey test?).
+            This dataset is aggregated by date and the aggregation contains daily tests and daily positive results
+        </p>
+        <p class = "doc_p">with this dataset two graphs , All tests Vs Positives over time - numbers and All tests Vs Positives percentage over time  </p>
+        <ul>
+          <li class = "list_title">Worth Noting</li>
+            <ul>
+            <li>The data contains about 40,000+ rows with missing test date which are not counted.</li>
+            <li>NULL , pending and disqualified results are counted as tests taken (result is NULL)</li>
+            <li>borderline positives are counted as positive</li>
+                <li>the positive count includes only tests for virus detection ( not recovery or survey)</li>
+
+            </ul>
+        </ul>
+
+        <h2>Confirmed Vs Active Vs Recovered vs Deaths</h2>
+        <a href = "https://api.covid19api.com/country/israel?from=2020-02-22T00:00:00Z">To Source</a><br><br>
+        <p class = "doc_p">
+            Since the Israel Ministry Of Health does not publish the daily confirmed , active, recovered & death numbers in the APIs
+            this data had to be taken from an outside source , the data in this api comes with daily cumulative numbers of the above
+            and before being inserted to the database columns of calculated daily change are added to the dataset.
+            from this dataset two graphs are plotted , one plots the cumulative confirmed , active and recovered and the respective
+            CFR over time. the second graph plots the daily change in confirmed cases ,active cases and recoveries.
+        </p>
+        <ul>
+          <li class = "list_title">Worth Noting</li>
+            <ul>
+            <li>This is not official Israel Ministry Of Health data ,  but its based on th official publications of numbers daily.</li>
+            <li>CFR (=Case Fatality Rate) is calculated like so: daily cumulative deaths / daily cumulative cases</li>
+
+            </ul>
+        </ul>
+        <h2>First Tests With Symptoms</h2>
+        <a href = "data.gov.il/dataset/covid-19/resource/d337959a-020a-4ed3-84f7-fca182292308">To Source</a><br><br>
+         <p class = "doc_p">
+            this dataset includes first test result and date, with additional data such as gender ,symptoms(fever, cough , sore throat head ache) , age above 60  (true/false)
+             and test indication (contact with confirmed ,back from abroad , symptoms or other).
+             from this data two graphs are plotted all tests vs tested with symptoms and positive tests vs positive tests with symptoms.
+      </p>
+         <ul>
+          <li class = "list_title">Worth Noting</li>
+            <ul>
+            <li>NULL , pending and disqualified results are counted as tests taken (result is NULL)</li>
+            <li>borderline positives are counted as positive</li>
+                <li>all test are counted since those are only first tests</li>
+                <li>test/positive with symptoms means a patient that got tested with at least one symptom (fever, cough , sore throat head ache) </li>
+
+            </ul>
+        </ul>
+        <h2>Hospitalizations Data</h2>
+        <a href = "https://data.gov.il/dataset/covid-19/resource/e4bf0ab8-ec88-4f9b-8669-f2cc78273edd">To Source</a><br><br>
+         <p class = "doc_p">
+           this dataset includes daily hospitalizations data by severity , gender and also cumulative severe hospitalizations.
+             from this data four graphs are plotted , daily hospitalizations status by severity , daily percentage of severities from total daily hospitalized
+              daily percentage of severities from total daily cumulative cases and daily death vs daily cumulative severe cases.
+
+      </p>
+         <ul>
+          <li class = "list_title">Worth Noting</li>
+            <ul>
+                <li>the data contains the value '<15' for values smaller than 15 and they are counted as 0 (only 3 rows have those and its insignificant in the grand scheme)  </li>
+                <li>the percentage out of cases and deaths out of severe cases  were calculated by joining the covid19api data </li>
+                <li>the deaths out of severe cases was calculated under the assumption that the vast majority of deaths were first severe cases</li>
+
+            </ul>
+        </ul>
+
+        <h2>Deceased Data </h2>
+        <a href = "https://data.gov.il/dataset/covid-19/resource/a2b2fceb-3334-44eb-b7b5-9327a573ea2c">To Source</a><br><br>
+         <p class = "doc_p">
+            this dataset is the Israel Ministry Of Health deceased data it is very unfortunate that this data does not contain dates
+             but its still possible to make cumulative analysis.
+             this data includes gender, age group ventilated (yes/no), time between positive and hospitalization,length of hospitalization ,time between positive and death.
+             this data is used to plot tree graphs at the moment :<br>
+             deaths by age group - numbers, deaths deaths by age group -percentage, percentage ventilated by age group
+             these graphs can be found at the 'Cumulative Graphs' section .
+
+      </p>
+
+
+
+</div>
+</div>
+
+</div>
+<script>
+function togglePage(){
+    var helpdict = {
+        date_filt_nav:"date_filtered",
+        cumu_nav: "cumulative",
+        doc_nav: "docs"
+    }
+    visID = helpdict[event.target.id];
+    pages = document.getElementById("pages").children
+    for(var i = 0 ;i <pages.length;i++){
+        if(pages[i].id == visID){
+            pages[i].setAttribute("style","display:block;");
+        }else{
+            pages[i].setAttribute("style","display:none;");
+        }
+    }
+}
+function loadingAnimation(){
+document.getElementById("loading").setAttribute("style","display:inline;");
+}
+</script>
+</body>
+</html>

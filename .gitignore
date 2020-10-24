@@ -1,0 +1,4 @@
+venv/
+covid/static/*.png
+covid/db.sqlite3
+.idea/
