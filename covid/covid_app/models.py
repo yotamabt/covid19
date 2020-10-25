@@ -63,7 +63,7 @@ class agg_Alltests(models.Model):
 
 
     def __str__(self):
-        return self.Date.strftime('%Y-%m-%d')
+        return self.test_date.strftime('%Y-%m-%d')
 
 class agg_PCRTestsSymptoms(models.Model):
     test_date = models.DateField(auto_now_add=False , auto_now= False , blank= True ,null= True)
@@ -73,7 +73,7 @@ class agg_PCRTestsSymptoms(models.Model):
     poswithwithsymptoms = models.IntegerField(null=True)
 
     def __str__(self):
-        return self.Date.strftime('%Y-%m-%d')
+        return self.test_date.strftime('%Y-%m-%d')
 class hospitalization(models.Model):
     date=models.DateField(auto_now_add=False , auto_now= False , blank= True ,null= True)
     total_hospitalised = models.IntegerField(null=True)

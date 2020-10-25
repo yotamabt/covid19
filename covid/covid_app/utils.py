@@ -442,19 +442,19 @@ def agg():
     database.execute("UPDATE SQLite_sequence SET seq=0 where name ='covid_app_agg_pcrtestssymptoms';")
     database.commit()
     database.execute('''
-                            INSERT INTO covid_app_agg_alltests(test_date , total_tests, total_pos)
+                           INSERT INTO covid_app_agg_alltests(test_date , total_tests, total_pos)
                             select * from
                             (select t1.test_date,count(*) as total_tests ,t2.total_pos
                             from covid_app_alltests t1
                             join (select result_date ,count(*) as total_pos
                                     from covid_app_alltests
-                                    where corona_result =True 
-                                    and test_for_corona_diagnosis = True
+                                    where corona_result =true 
+                                    and test_for_corona_diagnosis = true
                                     group by result_date
                                     ) as t2
                             on t2.result_date = t1.test_date
                             where 
-                            t1.test_for_corona_diagnosis = True
+                            t1.test_for_corona_diagnosis = true
                             group by test_date)
                                                                         ''')
     database.commit()
