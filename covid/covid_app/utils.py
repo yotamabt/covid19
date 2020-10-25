@@ -104,34 +104,6 @@ def fullDataImportPCRTests():
 
 # import all tests with  no symptoms data from https://data.gov.il/dataset/covid-19/resource/dcf999c1-d394-4b57-a5e0-9d014a62e046
 def TestsFullUpdateNoSymptoms():
-    # connect to database
-    database = sqlite3.connect('db.sqlite3', check_same_thread=False)
-
-    # delete old data from preparation table
-    database.execute('DELETE FROM covid_app_alltests_prep;')
-    database.commit()
-    database.execute("UPDATE SQLite_sequence SET seq=0 where name ='covid_app_alltests_prep' ")
-    database.commit()
-
-    # make the first request and get the size
-    req = requests.get(
-        "https://data.gov.il/api/3/action/datastore_search?resource_id=dcf999c1-d394-4b57-a5e0-9d014a62e046&limit=32000&include_total=true").json()
-    finalList = req["result"]["records"].copy()
-    indx = 0
-    round = 1
-
-    size = req["result"]["total"]
-
-    # incrementally get all the data (the limit is 32,000 per api call)
-    while indx < size:
-        print("ROUND" + str(round))
-        indx = indx + 32000
-        req = requests.get(
-            "https://data.gov.il/api/3/action/datastore_search?resource_id=dcf999c1-d394-4b57-a5e0-9d014a62e046&limit=32000&include_total=true&offset=" + str(
-                indx)).json()
-
-        finalList = finalList + req["result"]["records"].copy()
-        round = round + 1
 
     # help dict to transform data
     helpdict = {
@@ -152,10 +124,24 @@ def TestsFullUpdateNoSymptoms():
         'לא ודאי ישן': None
 
     }
-    qlist = []
+    # connect to database
+    database = sqlite3.connect('db.sqlite3', check_same_thread=False)
 
-    # prepare the query
-    for row in finalList:
+    # delete old data from preparation table
+    database.execute('DELETE FROM covid_app_alltests_prep;')
+    database.commit()
+    database.execute("UPDATE SQLite_sequence SET seq=0 where name ='covid_app_alltests_prep' ")
+    database.commit()
+
+    # make the first request and get the size
+    req = requests.get(
+        "https://data.gov.il/api/3/action/datastore_search?resource_id=dcf999c1-d394-4b57-a5e0-9d014a62e046&limit=32000&include_total=true").json()
+
+    indx = 0
+    round = 1
+    qlist = []
+    size = req["result"]["total"]
+    for row in req["result"]["records"]:
         test_date = None
         if row['test_date'] != 'NULL':
             test_date = datetime.datetime.strptime(row['test_date'], "%Y-%m-%d")
@@ -167,30 +153,62 @@ def TestsFullUpdateNoSymptoms():
         test_for_corona_diagnosis = helpdict[row["test_for_corona_diagnosis"]]
         is_first_Test = helpdict[row["is_first_Test"]]
 
-        qlist.append((test_date,result_date,corona_result,lab_id,test_for_corona_diagnosis,is_first_Test))
-
-
+        qlist.append((test_date, result_date, corona_result, lab_id, test_for_corona_diagnosis, is_first_Test))
     print("done Looping , creating query")
-
+    database.executemany('''insert into covid_app_alltests_prep(test_date,
+        result_date,
+        corona_result,
+        lab_id,
+        test_for_corona_diagnosis,
+        is_first_Test) values (date(?),date(?),?,?,?,?)  ''', qlist)
     print("executing query")
 
-    # execute query
-    database.executemany('''insert into covid_app_alltests_prep(test_date,
-    result_date,
-    corona_result,
-    lab_id,
-    test_for_corona_diagnosis,
-    is_first_Test) values (date(?),date(?),?,?,?,?)  ''',qlist)
-    database.commit()
+    # incrementally get all the data (the limit is 32,000 per api call)
+    while indx < size:
+        qlist = []
+        print("ROUND" + str(round))
+        indx = indx + 32000
+        req = requests.get(
+            "https://data.gov.il/api/3/action/datastore_search?resource_id=dcf999c1-d394-4b57-a5e0-9d014a62e046&limit=32000&include_total=true&offset=" + str(
+                indx)).json()
+
+
+        round = round + 1
+        # prepare the query
+        for row in req["result"]["records"]:
+            test_date = None
+            if row['test_date'] != 'NULL':
+                test_date = datetime.datetime.strptime(row['test_date'], "%Y-%m-%d")
+            result_date = None
+            if row['result_date'] != 'NULL':
+                result_date = datetime.datetime.strptime(row['result_date'], "%Y-%m-%d")
+            corona_result = helpdict[row["corona_result"]]
+            lab_id = row['lab_id']
+            test_for_corona_diagnosis = helpdict[row["test_for_corona_diagnosis"]]
+            is_first_Test = helpdict[row["is_first_Test"]]
+
+            qlist.append((test_date, result_date, corona_result, lab_id, test_for_corona_diagnosis, is_first_Test))
+        print("done Looping , creating query")
+        database.executemany('''insert into covid_app_alltests_prep(test_date,
+            result_date,
+            corona_result,
+            lab_id,
+            test_for_corona_diagnosis,
+            is_first_Test) values (date(?),date(?),?,?,?,?)  ''', qlist)
+        print("executing query")
+
+
+
 
     # clear old data from production table and copy the updated data
+    print("Tranfering from prep table to prod table")
     database.execute('DELETE FROM covid_app_alltests;')
     database.commit()
     database.execute("UPDATE SQLite_sequence SET seq=0 where name ='covid_app_alltests'")
     database.commit()
     database.execute("insert into covid_app_alltests select * from covid_app_alltests_prep")
     database.commit()
-
+    print("done")
 
 # import deaths data from https://data.gov.il/dataset/covid-19/resource/a2b2fceb-3334-44eb-b7b5-9327a573ea2c
 def deathsNoDateUpdate():

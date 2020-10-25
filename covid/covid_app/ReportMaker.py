@@ -1,15 +1,22 @@
 import datetime
 from .models import AllTests,PCRTestsSymptoms ,deaths_no_date , covid19apidata,agg_Alltests,agg_PCRTestsSymptoms,hospitalization
 from django.db.models import Count ,Q
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-import statistics
+import os
+import platform
 
 '''
 functions in this file pull data from the database and make charts to be displayed on the clientside
 
 '''
+
+def staticFolder():
+    if platform.system() == 'Windows':
+        return "./static/"
+    else:
+        return os.path.realpath('static') +"/"
+
 
 
 
@@ -55,10 +62,10 @@ def testsVsPosReport(fdate = None , todate = None):
     # save versions for pc & mobile for responsiveness
     dpi = fig.get_dpi()
     plt.setp(tests.xaxis.get_majorticklabels(), rotation=18)
-    plt.savefig("./static/mob_" + filename)
+    plt.savefig(staticFolder() + "mob_" + filename)
     plt.setp(tests.xaxis.get_majorticklabels(), rotation=0)
     fig.set_size_inches(1200/ float(dpi), 610/ float(dpi))
-    plt.savefig("./static/"+filename)
+    plt.savefig(staticFolder() + ""+filename)
 
     #clear plot
     plt.clf()
@@ -76,10 +83,10 @@ def testsVsPosReport(fdate = None , todate = None):
 
     # save versions for pc & mobile for responsiveness
     plt.setp(tests.xaxis.get_majorticklabels(), rotation=18)
-    plt.savefig("./static/mob_perc_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_" + filename)
     plt.setp(tests.xaxis.get_majorticklabels(), rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_" + filename)
+    plt.savefig(staticFolder() + "perc_" + filename)
     plt.clf()
 
     #return objects with filenames
@@ -126,9 +133,9 @@ def deathsBarChart():
     plt.legend()
 
     # save versions for pc & mobile for responsiveness
-    plt.savefig("./static/mob_" + filename)
+    plt.savefig(staticFolder() + "mob_" + filename)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/" + filename)
+    plt.savefig(staticFolder() + "" + filename)
 
 
     plt.clf()
@@ -141,9 +148,9 @@ def deathsBarChart():
     plt.legend()
 
     # save versions for pc & mobile for responsiveness
-    plt.savefig("./static/mob_perc_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_" + filename)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_" + filename)
+    plt.savefig(staticFolder() + "perc_" + filename)
     plt.clf()
 
     # plot 3rd graph Ventilated out of deaths by age group - percentages
@@ -154,9 +161,9 @@ def deathsBarChart():
     plt.legend()
 
     # save versions for pc & mobile for responsiveness
-    plt.savefig("./static/mob_perc_vent_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_vent_" + filename)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_vent_" + filename)
+    plt.savefig(staticFolder() + "perc_vent_" + filename)
     plt.clf()
 
     return {
@@ -209,10 +216,10 @@ def confDeathRecoverActive(fdate = None,todate = None):
     # save versions for pc & mobile for responsiveness
     dpi = fig.get_dpi()
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_" + filename)
+    plt.savefig(staticFolder() + "mob_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/" + filename)
+    plt.savefig(staticFolder() + "" + filename)
 
     #clear plot
     plt.clf()
@@ -226,10 +233,10 @@ def confDeathRecoverActive(fdate = None,todate = None):
     # save versions for pc & mobile for responsiveness
     fig = plt.gcf()
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_change_" + filename)
+    plt.savefig(staticFolder() + "mob_change_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/change_" + filename)
+    plt.savefig(staticFolder() + "change_" + filename)
     plt.clf()
     return {"filename_pc": filename,
             "filename_mob": "mob_" + filename,
@@ -266,10 +273,10 @@ def symptomsPCR(fdate = None , todate = None):
 
     # save versions for pc & mobile for responsiveness
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_" + filename)
+    plt.savefig(staticFolder() + "mob_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/" + filename)
+    plt.savefig(staticFolder() + "" + filename)
 
     #clear plot
     plt.clf()
@@ -282,10 +289,10 @@ def symptomsPCR(fdate = None , todate = None):
 
     # save versions for pc & mobile for responsiveness
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_pos_" + filename)
+    plt.savefig(staticFolder() + "mob_pos_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/pos_" + filename)
+    plt.savefig(staticFolder() + "pos_" + filename)
 
     # clear plot
     plt.clf()
@@ -340,10 +347,10 @@ def hospitalizationsCharts(fdate = None , todate = None):
     # save versions for pc & mobile for responsiveness
     plt.xticks(rotation=18)
 
-    plt.savefig("./static/mob_" + filename)
+    plt.savefig(staticFolder() + "mob_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/" + filename)
+    plt.savefig(staticFolder() + "" + filename)
     plt.clf()
 
     # plot 1st graph daily hospitalizations by severity
@@ -358,10 +365,10 @@ def hospitalizationsCharts(fdate = None , todate = None):
     dpi = fig.get_dpi()
     plt.legend()
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_perc_hosp_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_hosp_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_hosp_" + filename)
+    plt.savefig(staticFolder() + "perc_hosp_" + filename)
      
     plt.clf()
 
@@ -380,10 +387,10 @@ def hospitalizationsCharts(fdate = None , todate = None):
     dpi = fig.get_dpi()
     plt.legend()
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_perc_case_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_case_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_case_" + filename)
+    plt.savefig(staticFolder() + "perc_case_" + filename)
 
 
     plt.clf()
@@ -397,10 +404,10 @@ def hospitalizationsCharts(fdate = None , todate = None):
 
     # save versions for pc & mobile for responsiveness
     plt.xticks(rotation=18)
-    plt.savefig("./static/mob_perc_severe_death_" + filename)
+    plt.savefig(staticFolder() + "mob_perc_severe_death_" + filename)
     plt.xticks(rotation=0)
     fig.set_size_inches(1200 / float(dpi), 610 / float(dpi))
-    plt.savefig("./static/perc_severe_death_" + filename)
+    plt.savefig(staticFolder() + "perc_severe_death_" + filename)
     plt.clf()
     return {
     "filename_pc": filename,
