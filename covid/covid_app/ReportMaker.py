@@ -26,7 +26,7 @@ def imgprefix(plot_type):
 
 
 #this function plots two graphs depicting relations between tests and positive results
-def testsVsPosReport(fdate = None , todate = None):
+def testsVsPosReport(fdate = None , todate = None ):
     #set filename
     filename = imgprefix("TestVsPos")
 
@@ -428,7 +428,10 @@ def initPage(fdate = None , todate = None):
         fdate = AllTests.objects.filter(test_date__isnull=False).earliest('test_date').test_date.strftime('%Y-%m-%d')
     if todate is None or todate == "":
         todate = AllTests.objects.latest('test_date').test_date.strftime('%Y-%m-%d')
-    finalObj = {}
+    finalObj = {
+        "fdate": fdate,
+        "todate": todate
+    }
     tvp = testsVsPosReport(fdate=fdate,todate=todate)
     dbar = deathsBarChart()
     cnf = confDeathRecoverActive(fdate=fdate,todate=todate)

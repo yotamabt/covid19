@@ -5,5 +5,5 @@ import datetime
 class Command(BaseCommand):
     def handle(self, *args, **options):
         start =datetime.datetime.now()
-        TestsFullUpdateNoSymptoms()
+        deathsNoDateUpdate()
         print("Finished deathsNoDateUpdate in " + str(datetime.datetime.now()- start ))

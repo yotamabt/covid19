@@ -1,8 +1,5 @@
-from django.shortcuts import render
-from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import JsonResponse
-from django.template import loader
 from django.shortcuts import render
 from .ReportMaker import initPage ,testsVsPosReport
 
@@ -17,6 +14,7 @@ def index(request):
         return HttpResponse(render(request, "covid_app/index.html",dat))
     else:
         dat = initPage()
+
         print(dat)
         return HttpResponse(render(request, "covid_app/index.html",dat))
 

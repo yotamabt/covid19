@@ -1,4 +1,5 @@
 venv/
 covid/static/*.png
+!covid/static/loading.gif
 covid/db.sqlite3
 .idea/
