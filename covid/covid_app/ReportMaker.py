@@ -1,10 +1,11 @@
 import datetime
 from .models import AllTests,PCRTestsSymptoms ,deaths_no_date , covid19apidata,agg_Alltests,agg_PCRTestsSymptoms,hospitalization
-from django.db.models import Count ,Q
+from django.db.models import Count ,Q,Max ,Min
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import os
 import platform
+
 
 '''
 functions in this file pull data from the database and make charts to be displayed on the clientside
@@ -21,14 +22,19 @@ def staticFolder():
 
 
 #helper function to name chart files
-def imgprefix(plot_type):
-    return str(int(datetime.datetime.utcnow().timestamp())) +"_"+plot_type +".png"
+def imgprefix(plot_type , mode):
+    if mode == "filter":
+        return str(int(datetime.datetime.utcnow().timestamp())) +"_"+plot_type +".png"
+    elif mode == "dataupdate":
+        return "main" + "_" + plot_type + ".png"
 
 
 #this function plots two graphs depicting relations between tests and positive results
-def testsVsPosReport(fdate = None , todate = None ):
+def testsVsPosReport(fdate = None , todate = None , mode= "filter" ):
     #set filename
-    filename = imgprefix("TestVsPos")
+    filename = imgprefix("TestVsPos",mode)
+
+
 
     # if there are no date filters get the max & min date
     if fdate is None or fdate == "":
@@ -108,9 +114,9 @@ def orderDict(d):
     return newd
 
 #this function plots three graphs depicting cumulative deathrates by age group
-def deathsBarChart():
+def deathsBarChart(mode= "filter"):
     # set filename
-    filename = imgprefix("deathsCumulative")
+    filename = imgprefix("deathsCumulative",mode)
 
     #get data from database
     deathsbyagegroup = list(deaths_no_date.objects.values("age_group").annotate(count = Count('id'),vent= Count("id" ,filter=Q(Ventilated=True))))
@@ -176,9 +182,9 @@ def deathsBarChart():
             }
 
 #this function plots two graphs depicting cumulative confirmed ,active ,recovered and CFR as well as daily change in confirmed ,active and recovered
-def confDeathRecoverActive(fdate = None,todate = None):
+def confDeathRecoverActive(fdate = None,todate = None,mode= "filter"):
     # set filname
-    filename = imgprefix("confDeathRecoverActive")
+    filename = imgprefix("confDeathRecoverActive",mode)
 
     # if there are no date filters get the max & min date
     if fdate is None or fdate == "":
@@ -244,10 +250,10 @@ def confDeathRecoverActive(fdate = None,todate = None):
             "change_filename_mob": "mob_change_" + filename}
 
 #this function plots two graphs depicting the ratio between daily tests to tests with symptoms and positives and positives with symptoms
-def symptomsPCR(fdate = None , todate = None):
+def symptomsPCR(fdate = None , todate = None, mode= "filter" ):
 
     #set filname
-    filename = imgprefix("symptomsPCR")
+    filename = imgprefix("symptomsPCR",mode)
 
     #if there are no date filters get min and max date
     if fdate is None or fdate == "":
@@ -303,10 +309,10 @@ def symptomsPCR(fdate = None , todate = None):
 
 
 #this function plots four graphs depicting the ratio between levels of severity in hospitalized cases
-def hospitalizationsCharts(fdate = None , todate = None):
+def hospitalizationsCharts(fdate = None , todate = None, mode= "filter" ):
 
     #set filename
-    filename = imgprefix("hospitalizationsCharts")
+    filename = imgprefix("hospitalizationsCharts",mode)
 
     #if there are no filters get the max and min dates
     if fdate is None or fdate == "":
@@ -432,6 +438,7 @@ def initPage(fdate = None , todate = None):
         "fdate": fdate,
         "todate": todate
     }
+
     tvp = testsVsPosReport(fdate=fdate,todate=todate)
     dbar = deathsBarChart()
     cnf = confDeathRecoverActive(fdate=fdate,todate=todate)
@@ -449,3 +456,64 @@ def initPage(fdate = None , todate = None):
         finalObj[key.replace("filename", "filename_hospi")] = hospi[key]
     print(datetime.datetime.now() - start)
     return finalObj
+
+#after update create the main report (No filters)
+def initIndexPostUpdate():
+    start = datetime.datetime.now()
+    fdate = AllTests.objects.filter(test_date__isnull=False).earliest('test_date').test_date.strftime('%Y-%m-%d')
+    todate = AllTests.objects.latest('test_date').test_date.strftime('%Y-%m-%d')
+    with open("minmaxdates.txt", "w") as df:
+        df.write(fdate + "," + todate)
+    finalObj = {}
+
+    tvp = testsVsPosReport( mode= "dataupdate")
+    dbar = deathsBarChart( mode= "dataupdate")
+    cnf = confDeathRecoverActive( mode= "dataupdate")
+    sym = symptomsPCR( mode= "dataupdate")
+    hospi = hospitalizationsCharts( mode= "dataupdate")
+    for key in tvp.keys():
+        finalObj[key.replace("filename" , "filename_tvp")] = tvp[key]
+    for key in dbar.keys():
+        finalObj[key.replace("filename" , "filename_dbar")] = dbar[key]
+    for key in cnf.keys():
+        finalObj[key.replace("filename" , "filename_cnf")] = cnf[key]
+    for key in sym.keys():
+        finalObj[key.replace("filename", "filename_sym")] = sym[key]
+    for key in hospi.keys():
+        finalObj[key.replace("filename", "filename_hospi")] = hospi[key]
+    print(datetime.datetime.now() - start)
+    return finalObj
+
+#get the no filter paths (improves performance on first load)
+def getMainObject():
+    fdate = ""
+    todate = ""
+    with open("minmaxdates.txt", "r") as df:
+        ds = df.read()
+        fdate = ds.split(",")[0]
+        todate = ds.split(",")[1]
+
+    return {
+        'fdate':fdate,
+        'todate':todate,
+            'filename_tvp_pc': 'main_TestVsPos.png',
+            'filename_tvp_mob': 'mob_main_TestVsPos.png',
+            'perc_filename_tvp_pc': 'perc_main_TestVsPos.png',
+            'perc_filename_tvp_mob': 'mob_perc_main_TestVsPos.png',
+            'filename_dbar_pc': 'main_deathsCumulative.png',
+            'filename_dbar_mob': 'mob_main_deathsCumulative.png',
+            'perc_filename_dbar_pc': 'perc_main_deathsCumulative.png',
+            'perc_filename_dbar_mob': 'mob_perc_main_deathsCumulative.png',
+            'perc_vent_filename_dbar_pc': 'perc_vent_main_deathsCumulative.png',
+            'perc_vent_filename_dbar_mob': 'mob_perc_vent_main_deathsCumulative.png',
+            'filename_cnf_pc': 'main_confDeathRecoverActive.png',
+            'filename_cnf_mob': 'mob_main_confDeathRecoverActive.png',
+            'change_filename_cnf_pc': 'change_main_confDeathRecoverActive.png',
+            'change_filename_cnf_mob': 'mob_change_main_confDeathRecoverActive.png',
+            'filename_sym_pc': 'main_symptomsPCR.png', 'filename_sym_mob': 'mob_main_symptomsPCR.png',
+            'pos_filename_sym_pc': 'pos_main_symptomsPCR.png', 'pos_filename_sym_mob': 'mob_pos_main_symptomsPCR.png',
+            'filename_hospi_pc': 'main_hospitalizationsCharts.png', 'filename_hospi_mob': 'mob_main_hospitalizationsCharts.png',
+            'perc_hosp_filename_hospi_pc': 'perc_hosp_main_hospitalizationsCharts.png', 'perc_hosp_filename_hospi_mob': 'mob_perc_hosp_main_hospitalizationsCharts.png',
+            'perc_case_filename_hospi_pc': 'perc_case_main_hospitalizationsCharts.png', 'perc_case_filename_hospi_mob': 'mob_perc_case_main_hospitalizationsCharts.png',
+            'perc_severe_death_filename_hospi_pc': 'perc_severe_death_main_hospitalizationsCharts.png',
+            'perc_severe_death_filename_hospi_mob': 'mob_perc_severe_death_main_hospitalizationsCharts.png'}

@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render
-from .ReportMaker import initPage ,testsVsPosReport
+from .ReportMaker import initPage ,testsVsPosReport ,getMainObject
 
 # Create your views here.
 
@@ -13,7 +13,7 @@ def index(request):
         dat = initPage(str(fdate),str(todate))
         return HttpResponse(render(request, "covid_app/index.html",dat))
     else:
-        dat = initPage()
+        dat = getMainObject()
 
         print(dat)
         return HttpResponse(render(request, "covid_app/index.html",dat))

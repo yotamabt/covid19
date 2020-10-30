@@ -3,6 +3,7 @@ import requests
 import datetime
 import sqlite3
 
+
 def initPrepTables():
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
     tbls = ["covid_app_alltests","covid_app_pcrtestssymptoms"]
@@ -18,6 +19,7 @@ def fullDataImportPCRTests():
 
     #connect to database
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
+    database.execute('pragma journal_mode=wal')
 
     # delete old data from preparation table
     database.execute('DELETE FROM covid_app_pcrtestssymptoms_prep;')
@@ -27,23 +29,11 @@ def fullDataImportPCRTests():
 
     #make the first request and get the size
     req = requests.get("https://data.gov.il/api/3/action/datastore_search?resource_id=d337959a-020a-4ed3-84f7-fca182292308&limit=32000&include_total=true").json()
-    finalList = req["result"]["records"].copy()
     indx = 0
     round = 1
-
+    qlist = []
     size = req["result"]["total"]
-
-    # incrementally get all the data (the limit is 32,000 per api call)
-    while indx < size:
-        print("ROUND" + str(round))
-        indx = indx + 32000
-        req = requests.get(
-            "https://data.gov.il/api/3/action/datastore_search?resource_id=d337959a-020a-4ed3-84f7-fca182292308&limit=32000&include_total=true&offset=" + str(
-                indx)).json()
-        finalList = finalList + req["result"]["records"].copy()
-        round = round + 1
-
-    #help dict to transform data
+    # help dict to transform data
     helpdict = {
         "1": True,
         "0": False,
@@ -54,14 +44,11 @@ def fullDataImportPCRTests():
         "Yes": True,
         "No": False,
         "אחר": None,
-        "NULL":None,
-        'לא ודאי ישן':None
+        "NULL": None,
+        'לא ודאי ישן': None
 
     }
-
-    #prepare the query
-    qlist = []
-    for row in finalList:
+    for row in req["result"]["records"]:
         test_date = datetime.datetime.strptime(row['test_date'], "%Y-%m-%d")
         cough = helpdict[row["cough"]]
         fever = helpdict[row["fever"]]
@@ -73,26 +60,70 @@ def fullDataImportPCRTests():
         gender = helpdict[row["gender"]]
         test_indication = row["test_indication"]
 
-        qlist.append((test_date,cough,fever,sore_throat,shortness_of_breath,head_ache,corona_result,age_60_and_above,gender,test_indication))
-
-
-    print("done Looping , creating query")
+        qlist.append((test_date, cough, fever, sore_throat, shortness_of_breath, head_ache, corona_result,
+                      age_60_and_above, gender, test_indication))
 
     print("executing query")
 
-    #execute query
+    # execute query
     database.executemany('''insert into covid_app_pcrtestssymptoms_prep (test_date,
-                            cough,
-                            fever,
-                            sore_throat,
-                            shortness_of_breath,
-                            head_ache,
-                            corona_result,
-                            age_60_and_above,
-                            gender,
-                            test_indication) values (date(?),?,?,?,?,?,?,?,?,?)  ''',qlist)
+                                      cough,
+                                      fever,
+                                      sore_throat,
+                                      shortness_of_breath,
+                                      head_ache,
+                                      corona_result,
+                                      age_60_and_above,
+                                      gender,
+                                      test_indication) values (date(?),?,?,?,?,?,?,?,?,?)  ''', qlist)
     database.commit()
 
+    # incrementally get all the data (the limit is 32,000 per api call)
+    while indx < size:
+        qlist = []
+        print("ROUND" + str(round))
+        indx = indx + 32000
+        req = requests.get(
+            "https://data.gov.il/api/3/action/datastore_search?resource_id=d337959a-020a-4ed3-84f7-fca182292308&limit=32000&include_total=true&offset=" + str(
+                indx)).json()
+        round = round + 1
+        # prepare the query
+        for row in req["result"]["records"]:
+            test_date = datetime.datetime.strptime(row['test_date'], "%Y-%m-%d")
+            cough = helpdict[row["cough"]]
+            fever = helpdict[row["fever"]]
+            sore_throat = helpdict[row["sore_throat"]]
+            shortness_of_breath = helpdict[row["shortness_of_breath"]]
+            head_ache = helpdict[row["head_ache"]]
+            corona_result = helpdict[row["corona_result"]]
+            age_60_and_above = helpdict[row["age_60_and_above"]]
+            gender = helpdict[row["gender"]]
+            test_indication = row["test_indication"]
+
+            qlist.append((test_date, cough, fever, sore_throat, shortness_of_breath, head_ache, corona_result,
+                          age_60_and_above, gender, test_indication))
+
+        print("executing query")
+
+        # execute query
+        database.executemany('''insert into covid_app_pcrtestssymptoms_prep (test_date,
+                                   cough,
+                                   fever,
+                                   sore_throat,
+                                   shortness_of_breath,
+                                   head_ache,
+                                   corona_result,
+                                   age_60_and_above,
+                                   gender,
+                                   test_indication) values (date(?),?,?,?,?,?,?,?,?,?)  ''', qlist)
+        database.commit()
+
+
+
+
+
+
+    print("replace old data")
     #clear old data from production table and copy the updated data
     database.execute('DELETE FROM covid_app_pcrtestssymptoms;')
     database.commit()
@@ -100,6 +131,7 @@ def fullDataImportPCRTests():
     database.commit()
     database.execute("insert into covid_app_pcrtestssymptoms select * from covid_app_pcrtestssymptoms_prep")
     database.commit()
+    print("done")
 
 
 # import all tests with  no symptoms data from https://data.gov.il/dataset/covid-19/resource/dcf999c1-d394-4b57-a5e0-9d014a62e046
@@ -126,7 +158,7 @@ def TestsFullUpdateNoSymptoms():
     }
     # connect to database
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
-
+    database.execute('pragma journal_mode=wal')
     # delete old data from preparation table
     database.execute('DELETE FROM covid_app_alltests_prep;')
     database.commit()
@@ -214,7 +246,7 @@ def TestsFullUpdateNoSymptoms():
 def deathsNoDateUpdate():
     # connect to database
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
-
+    database.execute('pragma journal_mode=wal')
     # delete old data from table
     database.execute('DELETE FROM covid_app_deaths_no_date;')
     database.commit()
@@ -295,7 +327,7 @@ def deathsNoDateUpdate():
 def covid19APIUpdate():
     # connect to database
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
-
+    database.execute('pragma journal_mode=wal')
     # delete old data from table
     database.execute('DELETE FROM covid_app_covid19apidata;')
     database.commit()
@@ -344,7 +376,7 @@ def covid19APIUpdate():
 def hospitalizationUpdate():
     # connect to database
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
-
+    database.execute('pragma journal_mode=wal')
     # delete old data from table
     database.execute('DELETE FROM covid_app_hospitalization')
     database.commit()
@@ -432,6 +464,7 @@ def hospitalizationUpdate():
 # function to aggragte data from data.gov.il
 def agg():
     database = sqlite3.connect('db.sqlite3', check_same_thread=False)
+    database.execute('pragma journal_mode=wal')
     database.execute('DELETE FROM covid_app_agg_alltests;')
     database.commit()
     database.execute("UPDATE SQLite_sequence SET seq=0 where name ='covid_app_agg_alltests';")
